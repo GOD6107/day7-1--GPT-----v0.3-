@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>用户管理</h1>
+{% if msg %}<div class="alert {{ 'error' if msg_type=='error' else 'success' }}">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get" style="display:inline-block;">
+        <input type="text" name="keyword" placeholder="搜索用户名" value="{{ keyword }}">
+        <select name="status">
+            <option value="">全部状态</option>
+            <option value="active" {% if status=='active' %}selected{% end %}>启用</option>
+            <option value="disabled" {% if status=='disabled' %}selected{% end %}>禁用</option>
+        </select>
+        <button type="submit">搜索</button>
+        <a href="/admin/users">重置</a>
+    </form>
+    <details>
+        <summary>新增用户</summary>
+        <form method="post" action="/admin/users/create" style="margin-top:1rem;">
+            {% module xsrf_form_html() %}
+            <input type="text" name="username" placeholder="用户名" required>
+            <input type="password" name="password" placeholder="密码" required minlength="6">
+            <select name="role_id">
+                {% for role in roles %}
+                    <option value="{{ role['id'] }}">{{ role['name'] }}</option>
+                {% end %}
+            </select>
+            <button type="submit">新增</button>
+        </form>
+    </details>
+</div>
+<table>
+    <thead><tr><th><input type="checkbox" data-check-all></th><th>ID</th><th>用户名</th><th>角色</th><th>状态</th><th>最后登录</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for user in users %}
+        <tr>
+            <td><input type="checkbox" name="ids" value="{{ user['id'] }}" data-row-check></td>
+            <td>{{ user['id'] }}</td>
+            <td>{{ user['username'] }}</td>
+            <td>{{ user.get('role_name', '-') }}</td>
+            <td><span class="status-{{ user['status'] }}">{{ user['status'] }}</span></td>
+            <td>{{ user.get('last_login', '-') }}</td>
+            <td>
+                <details>
+                    <summary>编辑</summary>
+                    <form method="post" action="/admin/users/edit/{{ user['id'] }}" style="margin-top:0.5rem;">
+                        {% module xsrf_form_html() %}
+                        <input name="username" value="{{ user['username'] }}" required>
+                        <select name="role_id">
+                            {% for role in roles %}
+                                <option value="{{ role['id'] }}" {% if role['id'] == user['role_id'] %}selected{% end %}>{{ role['name'] }}</option>
+                            {% end %}
+                        </select>
+                        <select name="status">
+                            <option value="active" {% if user['status']=='active' %}selected{% end %}>启用</option>
+                            <option value="disabled" {% if user['status']=='disabled' %}selected{% end %}>禁用</option>
+                        </select>
+                        <input type="password" name="password" placeholder="新密码（留空不改）">
+                        <button type="submit">保存</button>
+                    </form>
+                </details>
+                <form method="post" action="/admin/users/status/{{ user['id'] }}" style="display:inline;">
+                    {% module xsrf_form_html() %}
+                    <input type="hidden" name="status" value="{{ 'disabled' if user['status']=='active' else 'active' }}">
+                    <button type="submit">{{ '禁用' if user['status']=='active' else '启用' }}</button>
+                </form>
+                <form method="post" action="/admin/users/delete/{{ user['id'] }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
+                    {% module xsrf_form_html() %}
+                    <button type="submit" class="danger">删除</button>
+                </form>
+            </td>
+        </tr>
+    {% end %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span>共 {{ total }} 条，第 {{ page }} 页</span>
+    {% if page > 1 %}<a href="?page={{ page-1 }}&keyword={{ keyword }}&status={{ status }}">上一页</a>{% end %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&keyword={{ keyword }}&status={{ status }}">下一页</a>{% end %}
+</div>
+<script>
+    document.querySelector('[data-check-all]')?.addEventListener('change', function(e) {
+        document.querySelectorAll('[data-row-check]').forEach(cb => cb.checked = e.target.checked);
+    });
+</script>
+{% end %}

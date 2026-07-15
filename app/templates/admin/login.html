@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>管理员登录</title>
+    <link rel="stylesheet" href="{{ static_url('css/style.css') }}">
+</head>
+<body style="display:flex; justify-content:center; align-items:center; height:100vh;">
+    <div class="glass-panel" style="max-width:400px; padding:2rem;">
+        <h2>管理员登录</h2>
+        {% if error %}
+            <div class="alert error">{{ error }}</div>
+        {% end %}
+        <form method="post" action="/admin/login">
+            {% module xsrf_form_html() %}
+            <div><label>用户名：<input type="text" name="username" required></label></div>
+            <div><label>密码：<input type="password" name="password" required></label></div>
+            <button type="submit">登录</button>
+        </form>
+        <p><a href="/login">普通用户登录</a></p>
+    </div>
+</body>
+</html>

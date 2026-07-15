@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ project_name }} 后台</title>
+    <link rel="stylesheet" href="{{ static_url('css/style.css') }}">
+</head>
+<body class="admin-shell">
+    <aside class="admin-sidebar">
+        <h2>后台管理</h2>
+        <ul>
+            {% for item in sidebar_menu %}
+                <li>
+                        <a href="{{ item.get('route', '#') }}">{{ item.get('name', '') }}</a>
+                    {% if item.get('children') %}
+                        <ul>
+                        {% for child in item.get('children', []) %}
+                                <li><a href="{{ child.get('route', '#') }}">{{ child.get('name', '') }}</a></li>
+                        {% end %}
+                        </ul>
+                    {% end %}
+                </li>
+            {% end %}
+        </ul>
+    </aside>
+    <main class="admin-content">
+        <header>
+            <span>当前角色：{{ current_role }}</span>
+            <a href="/admin/logout">退出</a>
+        </header>
+        <section>
+            {% block body %}{% end %}
+        </section>
+    </main>
+    <script src="{{ static_url('js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>模型引擎</h1>
+{% if msg %}<div class="alert {{ 'error' if msg_type=='error' else 'success' }}">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get">
+        <input type="text" name="keyword" placeholder="搜索模型" value="{{ keyword }}">
+        <select name="status">
+            <option value="">全部状态</option>
+            <option value="active" {% if status=='active' %}selected{% end %}>启用</option>
+            <option value="disabled" {% if status=='disabled' %}selected{% end %}>禁用</option>
+        </select>
+        <button type="submit">搜索</button>
+        <a href="/admin/models">重置</a>
+    </form>
+    <details>
+        <summary>新增模型</summary>
+        <form method="post" action="/admin/models/create" style="margin-top:1rem;">
+            {% module xsrf_form_html() %}
+            <input name="code" placeholder="编码" required>
+            <input name="name" placeholder="名称" required>
+            <input name="provider" placeholder="Provider（如 OpenAI）">
+            <input name="model_name" placeholder="模型名（如 gpt-3.5）" required>
+            <input name="base_url" placeholder="Base URL">
+            <input name="api_key" type="password" placeholder="API Key">
+            <select name="category">
+                <option value="text">文本</option>
+                <option value="image">图像</option>
+                <option value="audio">音频</option>
+                <option value="video">视频</option>
+                <option value="multimodal">多模态</option>
+                <option value="embedding">嵌入</option>
+            </select>
+            <input name="top_value" type="number" step="0.1" value="0.8" placeholder="top值">
+            <input name="context_count" type="number" value="8" placeholder="上下文数">
+            <textarea name="system_prompt" placeholder="系统提示词" rows="3"></textarea>
+            <select name="is_default">
+                <option value="0">非默认</option>
+                <option value="1">默认</option>
+            </select>
+            <select name="status">
+                <option value="active">启用</option>
+                <option value="disabled">禁用</option>
+            </select>
+            <button type="submit">新增</button>
+        </form>
+    </details>
+</div>
+<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:1rem;">
+{% for model in models %}
+    <div class="glass-panel" style="border:1px solid {% if model.get('is_default') %}#28a745{% else %}#ddd{% end %};">
+        <div style="display:flex; justify-content:space-between;">
+            <h3>{{ model['name'] }}</h3>
+            {% if model.get('is_default') %}<span style="color:#28a745;">默认</span>{% end %}
+        </div>
+        <p><strong>编码：</strong>{{ model['code'] }} | <strong>Provider：</strong>{{ model.get('provider', '') }} | <strong>模型：</strong>{{ model['model_name'] }}</p>
+        <p><strong>分类：</strong>{{ model.get('category', 'text') }} | <strong>状态：</strong><span class="status-{{ model['status'] }}">{{ model['status'] }}</span></p>
+        <p><strong>token统计：</strong>Prompt {{ model.get('token_prompt', 0) }} | Completion {{ model.get('token_completion', 0) }} | Total {{ model.get('token_total', 0) }}</p>
+        <div style="margin:0.5rem 0;">
+            <details>
+                <summary>模型对话（SSE 演示）</summary>
+                <div data-model-chat="{{ model['id'] }}">
+                    <div data-chat-output style="border:1px solid #ccc; padding:1rem; min-height:80px; margin-bottom:0.5rem;">等待对话...</div>
+                    <input data-chat-input type="text" placeholder="输入消息" value="你好，请介绍一下自己">
+                    <button data-chat-send>发送</button>
+                </div>
+            </details>
+        </div>
+        <div>
+            <details>
+                <summary>编辑</summary>
+                <form method="post" action="/admin/models/edit/{{ model['id'] }}" style="margin-top:0.5rem;">
+                    {% module xsrf_form_html() %}
+                    <input name="code" value="{{ model['code'] }}" required>
+                    <input name="name" value="{{ model['name'] }}" required>
+                    <input name="provider" value="{{ model.get('provider', '') }}">
+                    <input name="model_name" value="{{ model['model_name'] }}" required>
+                    <input name="base_url" value="{{ model.get('base_url', '') }}">
+                    <input name="api_key" type="password" placeholder="留空不改">
+                    <select name="category">
+                        <option value="text" {% if model.get('category')=='text' %}selected{% end %}>文本</option>
+                        <option value="image" {% if model.get('category')=='image' %}selected{% end %}>图像</option>
+                        <option value="audio" {% if model.get('category')=='audio' %}selected{% end %}>音频</option>
+                        <option value="video" {% if model.get('category')=='video' %}selected{% end %}>视频</option>
+                        <option value="multimodal" {% if model.get('category')=='multimodal' %}selected{% end %}>多模态</option>
+                        <option value="embedding" {% if model.get('category')=='embedding' %}selected{% end %}>嵌入</option>
+                    </select>
+                    <input name="top_value" type="number" step="0.1" value="{{ model.get('top_value', 0.8) }}">
+                    <input name="context_count" type="number" value="{{ model.get('context_count', 8) }}">
+                    <textarea name="system_prompt" rows="3">{{ model.get('system_prompt', '') }}</textarea>
+                    <select name="is_default">
+                        <option value="0" {% if not model.get('is_default') %}selected{% end %}>非默认</option>
+                        <option value="1" {% if model.get('is_default') %}selected{% end %}>默认</option>
+                    </select>
+                    <select name="status">
+                        <option value="active" {% if model['status']=='active' %}selected{% end %}>启用</option>
+                        <option value="disabled" {% if model['status']=='disabled' %}selected{% end %}>禁用</option>
+                    </select>
+                    <button type="submit">保存</button>
+                </form>
+            </details>
+            {% if not model.get('is_default') %}
+                <form method="post" action="/admin/models/default/{{ model['id'] }}" style="display:inline;">
+                    {% module xsrf_form_html() %}
+                    <button type="submit">设为默认</button>
+                </form>
+            {% end %}
+            <form method="post" action="/admin/models/status/{{ model['id'] }}" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <input type="hidden" name="status" value="{{ 'disabled' if model['status']=='active' else 'active' }}">
+                <button type="submit">{{ '禁用' if model['status']=='active' else '启用' }}</button>
+            </form>
+            <form method="post" action="/admin/models/delete/{{ model['id'] }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
+                {% module xsrf_form_html() %}
+                <button type="submit" class="danger">删除</button>
+            </form>
+        </div>
+    </div>
+{% end %}
+</div>
+<div class="pagination">
+    <span>共 {{ total }} 条，第 {{ page }} 页</span>
+    {% if page > 1 %}<a href="?page={{ page-1 }}&keyword={{ keyword }}&status={{ status }}">上一页</a>{% end %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&keyword={{ keyword }}&status={{ status }}">下一页</a>{% end %}
+</div>
+<script>
+    // 简单的 SSE 对话脚本（复用原 base.js 逻辑）
+    document.querySelectorAll('[data-model-chat]').forEach(panel => {
+        const modelId = panel.dataset.modelChat;
+        const input = panel.querySelector('[data-chat-input]');
+        const output = panel.querySelector('[data-chat-output]');
+        const send = panel.querySelector('[data-chat-send]');
+        if (!modelId || !input || !output || !send) return;
+        send.addEventListener('click', function() {
+            const msg = input.value.trim();
+            if (!msg) return alert('请输入消息');
+            if (window._stream) window._stream.close();
+            output.textContent = '响应中...';
+            const es = new EventSource(`/admin/models/stream/${modelId}?message=${encodeURIComponent(msg)}`);
+            window._stream = es;
+            es.addEventListener('delta', e => {
+                try { output.textContent += JSON.parse(e.data).content; } catch(ex) {}
+            });
+            es.addEventListener('usage', e => {
+                try { output.textContent += '\n\n' + JSON.stringify(JSON.parse(e.data)); } catch(ex) {}
+            });
+            es.addEventListener('done', () => { es.close(); });
+            es.addEventListener('error', () => { es.close(); });
+        });
+    });
+</script>
+{% end %}

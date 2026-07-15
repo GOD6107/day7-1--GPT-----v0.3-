@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="glass-panel" style="max-width:760px; margin:2rem auto;">
+    <h2>数字员工</h2>
+    {% if error %}<div class="alert error">{{ error }}</div>{% end %}
+    <form method="post" action="/worker/send">
+        {% module xsrf_form_html() %}
+        <div><label>输入任务：<input type="text" name="query" style="width:100%;" placeholder="示例：@天气 成都 或 深度采集 政务" required></label></div>
+        <div><label>模式：
+            <select name="mode">
+                <option value="assistant">通用</option>
+                <option value="weather">天气</option>
+                <option value="collection">深度采集</option>
+            </select>
+        </label></div>
+        <button type="submit">派遣数字员工</button>
+    </form>
+    {% if result %}
+        <div class="glass-panel" style="background:#f8f9ff; margin-top:1rem;">
+            <h3>{{ result['title'] }}</h3>
+            {% if result['type'] == 'weather' %}
+                <p>{{ result['data']['city'] }} / {{ result['data']['temperature'] }} / {{ result['data']['condition'] }}</p>
+                <p>湿度：{{ result['data']['humidity'] }}，风向：{{ result['data']['wind'] }}</p>
+            {% elif result['type'] == 'collection' %}
+                <p>共采集到 {{ result['count'] }} 条结果</p>
+                <ul>
+                    {% for item in result['data'] %}
+                        <li><a href="{{ item['url'] }}" target="_blank">{{ item['title'] }}</a> ({{ item['source_name'] }})</li>
+                    {% end %}
+                </ul>
+            {% else %}
+                <p>{{ result['data']['text'] }}</p>
+            {% end %}
+        </div>
+    {% end %}
+</div>
+{% end %}

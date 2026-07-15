@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>菜单管理</h1>
+{% if msg %}<div class="alert {{ 'error' if msg_type=='error' else 'success' }}">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get">
+        <select name="role_id">
+            {% for role in roles %}
+                <option value="{{ role['id'] }}" {% if role['id'] == selected_role_id %}selected{% end %}>{{ role['name'] }}</option>
+            {% end %}
+        </select>
+        <button type="submit">切换角色</button>
+    </form>
+</div>
+<div class="glass-panel">
+    <h3>当前菜单预览</h3>
+    <ul>
+    {% for item in menu_tree %}
+        <li>
+            {{ item['name'] }}
+            {% if item.get('children') %}
+                <ul>
+                {% for child in item['children'] %}
+                    <li>{{ child['name'] }}</li>
+                {% end %}
+                </ul>
+            {% end %}
+        </li>
+    {% end %}
+    </ul>
+</div>
+<div class="glass-panel">
+    <h3>菜单排序（拖拽暂不支持，使用按钮调整）</h3>
+    <ul>
+    {% for row in menu_rows %}
+        <li style="display:flex; gap:1rem; align-items:center; padding:0.5rem; border-bottom:1px solid #eee;">
+            <span>{{ row['name'] }}</span>
+            <span style="color:#999;">排序：{{ row['menu_sort_order'] }}</span>
+            <form method="post" action="/admin/menus/move" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <input type="hidden" name="role_id" value="{{ selected_role_id }}">
+                <input type="hidden" name="function_id" value="{{ row['function_id'] }}">
+                <input type="hidden" name="direction" value="up">
+                <button type="submit">↑</button>
+            </form>
+            <form method="post" action="/admin/menus/move" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <input type="hidden" name="role_id" value="{{ selected_role_id }}">
+                <input type="hidden" name="function_id" value="{{ row['function_id'] }}">
+                <input type="hidden" name="direction" value="down">
+                <button type="submit">↓</button>
+            </form>
+        </li>
+    {% end %}
+    </ul>
+</div>
+{% end %}

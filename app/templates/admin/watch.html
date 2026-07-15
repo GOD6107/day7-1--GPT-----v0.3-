@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>瞭望管理</h1>
+{% if msg %}<div class="alert success">{{ msg }}</div>{% end %}
+<div class="glass-panel">
+    <h3>A. 搜索输入</h3>
+    <form method="get" action="/admin/watch">
+        <input type="hidden" name="collect" value="1">
+        <input type="text" name="keyword" placeholder="输入关键词" value="{{ keyword }}" required>
+        <input type="number" name="page" value="{{ page }}" min="1" style="width:60px;">
+        <button type="submit">采集</button>
+        <div class="glass-panel" style="margin-top:1rem; padding:0; border:none;">
+            <h3>B. 瞭源规则库</h3>
+            <div class="source-switch-grid">
+    {% for source in sources %}
+        <label>
+            <input type="checkbox" name="source_ids" value="{{ source['id'] }}" {% if source['id'] in selected_ids %}checked{% end %} {% if not source['enabled'] %}disabled{% end %}>
+            {{ source['name'] }}（{{ source['code'] }}）
+            <span style="font-size:0.8rem;color:#999;">{{ source.get('last_test_message', '未测试') }}</span>
+        </label>
+    {% end %}
+            </div>
+        </div>
+    </form>
+</div>
+<div class="glass-panel">
+    <h3>C. 采集结果</h3>
+    {% if results %}
+        <form method="post" action="/admin/watch/save">
+            {% module xsrf_form_html() %}
+            <button type="submit">保存选中到数据仓库</button>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1rem;">
+            {% for item in results %}
+                <div style="border:1px solid #ddd; padding:1rem; border-radius:4px;">
+                    <label><input type="checkbox" name="items" value="{{ item['json_data'] }}"> 选择</label>
+                    <h4>{{ item['title'] }}</h4>
+                    <p>{{ item.get('summary', '无摘要') }}</p>
+                    <a href="{{ item['url'] }}" target="_blank">查看原文</a>
+                </div>
+            {% end %}
+            </div>
+        </form>
+    {% else %}
+        <p>暂无结果，请搜索关键词并选择瞭源。</p>
+    {% end %}
+</div>
+{% end %}

@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>瞭源管理</h1>
+{% if msg %}<div class="alert {{ 'error' if msg_type=='error' else 'success' }}">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get">
+        <input type="text" name="keyword" placeholder="搜索" value="{{ keyword }}">
+        <select name="enabled">
+            <option value="">全部开关</option>
+            <option value="1" {% if enabled=='1' %}selected{% end %}>开启</option>
+            <option value="0" {% if enabled=='0' %}selected{% end %}>关闭</option>
+        </select>
+        <select name="status">
+            <option value="">全部状态</option>
+            <option value="active" {% if status=='active' %}selected{% end %}>启用</option>
+            <option value="disabled" {% if status=='disabled' %}selected{% end %}>禁用</option>
+        </select>
+        <button type="submit">搜索</button>
+        <a href="/admin/sources">重置</a>
+    </form>
+    <details>
+        <summary>新增瞭源</summary>
+        <form method="post" action="/admin/sources/create" style="margin-top:1rem;">
+            {% module xsrf_form_html() %}
+            <input name="code" placeholder="编码" required>
+            <input name="name" placeholder="名称" required>
+            <input name="url_template" placeholder="URL模板（含 {keyword}, {page_step}）" required style="width:400px;">
+            <textarea name="headers_json" placeholder='{"User-Agent":"Mozilla/5.0"}' rows="3" style="width:400px;"></textarea>
+            <input name="page_step" type="number" value="10">
+            <select name="parser_type">
+                <option value="baidu_news">百度新闻</option>
+                <option value="bing_news">必应新闻</option>
+                <option value="sogou_news">搜狗搜索</option>
+                <option value="generic">通用</option>
+            </select>
+            <select name="enabled">
+                <option value="1">开启</option>
+                <option value="0">关闭</option>
+            </select>
+            <select name="status">
+                <option value="active">启用</option>
+                <option value="disabled">禁用</option>
+            </select>
+            <input name="description" placeholder="描述">
+            <button type="submit">新增</button>
+        </form>
+    </details>
+</div>
+{% if test_items %}
+    <div class="glass-panel" style="margin-top:1rem;">
+        <h3>检索到资源</h3>
+        <p>当前瞭源：{{ test_source['name'] if test_source else '未知' }}（{{ test_source['code'] if test_source else '' }}），关键字：{{ test_keyword or '' }}，{{ test_message }}</p>
+        <ul>
+            {% for item in test_items %}
+                <li><a href="{{ item['url'] }}" target="_blank">{{ item['title'] }}</a> <small>({{ item['url'] }})</small></li>
+            {% end %}
+        </ul>
+    </div>
+{% elif test_message %}
+    <div class="glass-panel" style="margin-top:1rem;">
+        <h3>测试信息</h3>
+        <p>{{ test_message }}</p>
+    </div>
+{% end %}
+<table>
+    <thead><tr><th>ID</th><th>名称</th><th>URL模板</th><th>步长</th><th>开关/状态</th><th>测试信息</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for source in sources %}
+        <tr>
+            <td>{{ source['id'] }}</td>
+            <td>{{ source['name'] }}<br><span style="font-size:0.8rem;">{{ source['code'] }}</span></td>
+            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">{{ source['url_template'] }}</td>
+            <td>{{ source['page_step'] }}</td>
+            <td>{{ '开启' if source['enabled'] else '关闭' }} / {{ source['status'] }}</td>
+            <td>{{ source.get('last_test_status', '') }}<br>{{ source.get('last_test_message', '') }}</td>
+            <td>
+                <details>
+                    <summary>编辑</summary>
+                    <form method="post" action="/admin/sources/edit/{{ source['id'] }}" style="margin-top:0.5rem;">
+                        {% module xsrf_form_html() %}
+                        <input name="code" value="{{ source['code'] }}" required>
+                        <input name="name" value="{{ source['name'] }}" required>
+                        <input name="url_template" value="{{ source['url_template'] }}" required style="width:300px;">
+                        <textarea name="headers_json" rows="3" style="width:300px;">{{ source.get('headers_json', '{}') }}</textarea>
+                        <input name="page_step" type="number" value="{{ source['page_step'] }}">
+                        <select name="parser_type">
+                            <option value="baidu_news" {% if source.get('parser_type')=='baidu_news' %}selected{% end %}>百度新闻</option>
+                            <option value="bing_news" {% if source.get('parser_type')=='bing_news' %}selected{% end %}>必应新闻</option>
+                            <option value="sogou_news" {% if source.get('parser_type')=='sogou_news' %}selected{% end %}>搜狗搜索</option>
+                            <option value="generic" {% if source.get('parser_type')=='generic' %}selected{% end %}>通用</option>
+                        </select>
+                        <select name="enabled">
+                            <option value="1" {% if source['enabled'] %}selected{% end %}>开启</option>
+                            <option value="0" {% if not source['enabled'] %}selected{% end %}>关闭</option>
+                        </select>
+                        <select name="status">
+                            <option value="active" {% if source['status']=='active' %}selected{% end %}>启用</option>
+                            <option value="disabled" {% if source['status']=='disabled' %}selected{% end %}>禁用</option>
+                        </select>
+                        <input name="description" value="{{ source.get('description', '') }}">
+                        <button type="submit">保存</button>
+                    </form>
+                </details>
+                <form method="post" action="/admin/sources/toggle/{{ source['id'] }}" style="display:inline;">
+                    {% module xsrf_form_html() %}
+                    <input type="hidden" name="enabled" value="{{ 0 if source['enabled'] else 1 }}">
+                    <button type="submit">{{ '关闭' if source['enabled'] else '开启' }}</button>
+                </form>
+                <form method="post" action="/admin/sources/test/{{ source['id'] }}" style="display:inline;">
+                    {% module xsrf_form_html() %}
+                    <input name="test_keyword" value="政务" style="width:60px;">
+                    <button type="submit">测试</button>
+                </form>
+                <form method="post" action="/admin/sources/delete/{{ source['id'] }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
+                    {% module xsrf_form_html() %}
+                    <button type="submit" class="danger">删除</button>
+                </form>
+            </td>
+        </tr>
+    {% end %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span>共 {{ total }} 条，第 {{ page }} 页</span>
+    {% if page > 1 %}<a href="?page={{ page-1 }}&keyword={{ keyword }}&status={{ status }}&enabled={{ enabled }}">上一页</a>{% end %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&keyword={{ keyword }}&status={{ status }}&enabled={{ enabled }}">下一页</a>{% end %}
+</div>
+{% end %}

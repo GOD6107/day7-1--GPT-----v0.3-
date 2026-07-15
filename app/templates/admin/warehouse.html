@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>数据仓库</h1>
+{% if msg %}<div class="alert success">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get">
+        <input type="text" name="keyword" placeholder="搜索标题/关键词" value="{{ keyword }}">
+        <select name="deep_collected">
+            <option value="">全部</option>
+            <option value="1" {% if deep_collected=='1' %}selected{% end %}>已深度采集</option>
+            <option value="0" {% if deep_collected=='0' %}selected{% end %}>未深度采集</option>
+        </select>
+        <button type="submit">搜索</button>
+        <a href="/admin/warehouse">重置</a>
+    </form>
+    <form method="post" action="/admin/warehouse/bulk" style="display:inline;" onsubmit="return confirm('确认批量删除？');">
+        {% module xsrf_form_html() %}
+        <button type="submit" class="danger">批量删除</button>
+    </form>
+</div>
+<table>
+    <thead><tr><th><input type="checkbox" data-check-all></th><th>ID</th><th>标题</th><th>来源</th><th>深度</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for item in items %}
+        <tr>
+            <td><input type="checkbox" name="ids" value="{{ item['id'] }}" data-row-check></td>
+            <td>{{ item['id'] }}</td>
+            <td><strong>{{ item['title'] }}</strong><br><span style="color:#666;">{{ item.get('summary', '') }}</span></td>
+            <td>{{ item.get('source_name', '') }}<br>{{ item.get('keyword', '') }}</td>
+            <td>{{ '是' if item['deep_collected'] else '否' }}</td>
+            <td>
+                <details>
+                    <summary>查看</summary>
+                    <div style="padding:0.5rem;">
+                        <p><a href="{{ item['url'] }}" target="_blank">原文链接</a></p>
+                        <p><strong>深度数据：</strong>{{ item.get('deep_data', '暂无') }}</p>
+                    </div>
+                </details>
+                <form method="post" action="/admin/warehouse/deep/{{ item['id'] }}" style="display:inline;">
+                    {% module xsrf_form_html() %}
+                    <button type="submit">深度采集</button>
+                </form>
+                <form method="post" action="/admin/warehouse/delete/{{ item['id'] }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
+                    {% module xsrf_form_html() %}
+                    <button type="submit" class="danger">删除</button>
+                </form>
+            </td>
+        </tr>
+    {% end %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span>共 {{ total }} 条，第 {{ page }} 页</span>
+    {% if page > 1 %}<a href="?page={{ page-1 }}&keyword={{ keyword }}&deep_collected={{ deep_collected }}">上一页</a>{% end %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&keyword={{ keyword }}&deep_collected={{ deep_collected }}">下一页</a>{% end %}
+</div>
+{% end %}

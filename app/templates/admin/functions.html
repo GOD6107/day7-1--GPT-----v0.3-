@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>功能管理</h1>
+{% if msg %}<div class="alert {{ 'error' if msg_type=='error' else 'success' }}">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get">
+        <input type="text" name="keyword" placeholder="搜索功能" value="{{ keyword }}">
+        <select name="status">
+            <option value="">全部状态</option>
+            <option value="active" {% if status=='active' %}selected{% end %}>启用</option>
+            <option value="disabled" {% if status=='disabled' %}selected{% end %}>禁用</option>
+        </select>
+        <button type="submit">搜索</button>
+        <a href="/admin/functions">重置</a>
+    </form>
+    <details>
+        <summary>新增功能</summary>
+        <form method="post" action="/admin/functions/create" style="margin-top:1rem;">
+            {% module xsrf_form_html() %}
+            <input name="code" placeholder="编码（如 report）" required>
+            <input name="name" placeholder="名称" required>
+            <input name="route" placeholder="路由（如 /admin/report）" required>
+            <select name="parent_id">
+                <option value="0">一级功能</option>
+                {% for p in parent_choices %}
+                    <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+                {% end %}
+            </select>
+            <input name="sort_order" type="number" value="0" placeholder="排序">
+            <select name="status">
+                <option value="active">启用</option>
+                <option value="disabled">禁用</option>
+            </select>
+            <button type="submit">新增</button>
+        </form>
+    </details>
+</div>
+<table>
+    <thead><tr><th>ID</th><th>层级</th><th>编码</th><th>名称</th><th>路由</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for func in functions %}
+        <tr>
+            <td>{{ func['id'] }}</td>
+            <td>{{ func.get('parent_name', '一级') }}</td>
+            <td>{{ func['code'] }}</td>
+            <td>{{ func['name'] }}</td>
+            <td>{{ func['route'] }}</td>
+            <td>{{ func['sort_order'] }}</td>
+            <td><span class="status-{{ func['status'] }}">{{ func['status'] }}</span></td>
+            <td>
+                <details>
+                    <summary>编辑</summary>
+                    <form method="post" action="/admin/functions/edit/{{ func['id'] }}" style="margin-top:0.5rem;">
+                        {% module xsrf_form_html() %}
+                        <input name="code" value="{{ func['code'] }}" required>
+                        <input name="name" value="{{ func['name'] }}" required>
+                        <input name="route" value="{{ func['route'] }}" required>
+                        <select name="parent_id">
+                            <option value="0">一级功能</option>
+                            {% for p in parent_choices %}
+                                <option value="{{ p['id'] }}" {% if p['id'] == func['parent_id'] %}selected{% end %}>{{ p['name'] }}</option>
+                            {% end %}
+                        </select>
+                        <input name="sort_order" type="number" value="{{ func['sort_order'] }}">
+                        <select name="status">
+                            <option value="active" {% if func['status']=='active' %}selected{% end %}>启用</option>
+                            <option value="disabled" {% if func['status']=='disabled' %}selected{% end %}>禁用</option>
+                        </select>
+                        <button type="submit">保存</button>
+                    </form>
+                </details>
+                <form method="post" action="/admin/functions/status/{{ func['id'] }}" style="display:inline;">
+                    {% module xsrf_form_html() %}
+                    <input type="hidden" name="status" value="{{ 'disabled' if func['status']=='active' else 'active' }}">
+                    <button type="submit">{{ '禁用' if func['status']=='active' else '启用' }}</button>
+                </form>
+                <form method="post" action="/admin/functions/delete/{{ func['id'] }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
+                    {% module xsrf_form_html() %}
+                    <button type="submit" class="danger">删除</button>
+                </form>
+            </td>
+        </tr>
+    {% end %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span>共 {{ total }} 条，第 {{ page }} 页</span>
+    {% if page > 1 %}<a href="?page={{ page-1 }}&keyword={{ keyword }}&status={{ status }}">上一页</a>{% end %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&keyword={{ keyword }}&status={{ status }}">下一页</a>{% end %}
+</div>
+{% end %}

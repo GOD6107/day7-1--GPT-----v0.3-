@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>系统总览</h1>
+<div class="glass-panel">
+    <h3>统计信息</h3>
+    <ul>
+        <li>用户数：{{ metrics[0][1] }}</li>
+        <li>角色数：{{ metrics[1][1] }}</li>
+        <li>功能数：{{ metrics[2][1] }}</li>
+    </ul>
+</div>
+<div class="glass-panel">
+    <h3>最近审计日志</h3>
+    <table>
+        <thead><tr><th>用户</th><th>操作</th><th>IP</th><th>详情</th><th>时间</th></tr></thead>
+        <tbody>
+        {% for log in logs %}
+            <tr>
+                <td>{{ log['username'] }}</td>
+                <td>{{ log['action'] }}</td>
+                <td>{{ log.get('ip', '-') }}</td>
+                <td>{{ log.get('detail', '-') }}</td>
+                <td>{{ log['created_at'] }}</td>
+            </tr>
+        {% end %}
+        </tbody>
+    </table>
+</div>
+{% end %}

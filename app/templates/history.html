@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="glass-panel" style="max-width:900px; margin:2rem auto;">
+    <h2>历史记录</h2>
+    <table>
+        <thead>
+            <tr><th>ID</th><th>时间</th><th>查询</th><th>类型</th><th>来源</th><th>响应</th></tr>
+        </thead>
+        <tbody>
+            {% for item in histories %}
+                <tr>
+                    <td>{{ item['id'] }}</td>
+                    <td>{{ item['created_at'] }}</td>
+                    <td>{{ item['query'] }}</td>
+                    <td>{{ item['response_type'] }}</td>
+                    <td>{{ item['source'] }}</td>
+                    <td><pre style="white-space:pre-wrap;">{{ item['response'] }}</pre></td>
+                </tr>
+            {% end %}
+        </tbody>
+    </table>
+    <div style="margin-top:1rem;">
+        {% for n in range(1, pages+1) %}
+            {% if n == page %}
+                <strong>{{ n }}</strong>
+            {% else %}
+                <a href="/history?page={{ n }}">{{ n }}</a>
+            {% end %}
+        {% end %}
+    </div>
+</div>
+{% end %}

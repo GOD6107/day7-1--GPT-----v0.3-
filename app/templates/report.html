@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="glass-panel" style="max-width:760px; margin:2rem auto;">
+    <h2>报表统计</h2>
+    <div class="glass-panel" style="background:#f7f9ff;">
+        <h3>功能使用统计</h3>
+        <ul>
+            {% for key, value in counts.items() %}
+                <li>{{ key }}：{{ value }} 次</li>
+            {% end %}
+        </ul>
+    </div>
+    <div style="margin-top:1rem;">
+        <a href="/report/export?format=csv">导出 CSV</a> |
+        <a href="/report/export?format=json">导出 JSON</a>
+    </div>
+</div>
+{% end %}

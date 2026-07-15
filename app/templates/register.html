@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="glass-panel" style="max-width:400px; margin:2rem auto; padding:2rem;">
+    <h2>用户注册</h2>
+    {% if error %}
+        <div class="alert error">{{ error }}</div>
+    {% end %}
+    <form method="post" action="/register">
+        {% module xsrf_form_html() %}
+        <div><label>用户名：<input type="text" name="username" required></label></div>
+        <div><label>密码：<input type="password" name="password" required minlength="6"></label></div>
+        <div><label>确认密码：<input type="password" name="confirm" required minlength="6"></label></div>
+        <button type="submit">注册并登录</button>
+    </form>
+    <p>已有账号？<a href="/login">去登录</a></p>
+</div>
+{% end %}

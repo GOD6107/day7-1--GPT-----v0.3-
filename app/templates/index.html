@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="glass-panel" style="max-width:800px; margin:2rem auto; padding:2rem;">
+    <h1>欢迎使用 {{ project_name }}</h1>
+    <p>这是一个智能政务数据平台，提供数据采集、仓库存储和模型对话功能。</p>
+    <p>当前版本：{{ version }}</p>
+    {% if current_user %}
+        <p>已登录：{{ current_user.get('username', '') }}（{{ current_user.get('role_name', '') }}）</p>
+        <a href="/admin" class="button">进入后台管理</a>
+    {% else %}
+        <p><a href="/login" class="button">登录体验</a> 或 <a href="/register">注册</a></p>
+    {% end %}
+</div>
+{% end %}

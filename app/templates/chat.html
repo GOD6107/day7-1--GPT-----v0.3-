@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="glass-panel" style="max-width:760px; margin:2rem auto;">
+    <h2>用户对话</h2>
+    {% if error %}<div class="alert error">{{ error }}</div>{% end %}
+    <form method="post" action="/chat/send">
+        {% module xsrf_form_html() %}
+        <div><textarea name="query" rows="4" style="width:100%;">{{ query }}</textarea></div>
+        <button type="submit">发送</button>
+    </form>
+    {% if answer %}
+        <div class="glass-panel" style="background:#eef5ff; margin-top:1rem;">
+            <h3>回答</h3>
+            <p>{{ answer }}</p>
+        </div>
+    {% end %}
+</div>
+{% end %}

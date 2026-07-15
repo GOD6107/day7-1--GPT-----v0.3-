@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>角色管理</h1>
+{% if msg %}<div class="alert {{ 'error' if msg_type=='error' else 'success' }}">{{ msg }}</div>{% end %}
+<div class="toolbar">
+    <form method="get" style="display:inline-block;">
+        <input type="text" name="keyword" placeholder="搜索角色" value="{{ keyword }}">
+        <select name="status">
+            <option value="">全部状态</option>
+            <option value="active" {% if status=='active' %}selected{% end %}>启用</option>
+            <option value="disabled" {% if status=='disabled' %}selected{% end %}>禁用</option>
+        </select>
+        <button type="submit">搜索</button>
+        <a href="/admin/roles">重置</a>
+    </form>
+    <details>
+        <summary>新增角色</summary>
+        <form method="post" action="/admin/roles/create" style="margin-top:1rem;">
+            {% module xsrf_form_html() %}
+            <input name="code" placeholder="编码（如 viewer）" required>
+            <input name="name" placeholder="名称" required>
+            <input name="description" placeholder="描述">
+            <div style="margin:0.5rem 0;">
+                <strong>功能授权：</strong><br>
+                {% for func in function_tree %}
+                    <label><input type="checkbox" name="function_ids" value="{{ func['id'] }}"> {{ func['name'] }}</label>
+                    {% if func.get('children') %}
+                        <div style="margin-left:2rem;">
+                        {% for child in func['children'] %}
+                            <label><input type="checkbox" name="function_ids" value="{{ child['id'] }}"> {{ child['name'] }}</label>
+                        {% end %}
+                        </div>
+                    {% end %}
+                {% end %}
+            </div>
+            <button type="submit">新增</button>
+        </form>
+    </details>
+</div>
+<table>
+    <thead><tr><th>ID</th><th>编码</th><th>名称</th><th>类型</th><th>用户数</th><th>功能数</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for role in roles %}
+        <tr>
+            <td>{{ role['id'] }}</td>
+            <td>{{ role['code'] }}</td>
+            <td>{{ role['name'] }}</td>
+            <td>{{ '系统' if role.get('is_system') else '自定义' }}</td>
+            <td>{{ role.get('user_count', 0) }}</td>
+            <td>{{ role.get('func_count', 0) }}</td>
+            <td><span class="status-{{ role['status'] }}">{{ role['status'] }}</span></td>
+            <td>
+                <details>
+                    <summary>编辑</summary>
+                    <form method="post" action="/admin/roles/edit/{{ role['id'] }}" style="margin-top:0.5rem;">
+                        {% module xsrf_form_html() %}
+                        <input name="code" value="{{ role['code'] }}" {% if role.get('is_system') %}readonly{% end %}>
+                        <input name="name" value="{{ role['name'] }}" {% if role.get('is_system') %}readonly{% end %}>
+                        <input name="description" value="{{ role.get('description', '') }}" {% if role.get('is_system') %}readonly{% end %}>
+                        <div style="margin:0.5rem 0;">
+                            <strong>功能授权：</strong><br>
+                            {% for func in function_tree %}
+                                <label><input type="checkbox" name="function_ids" value="{{ func['id'] }}" {% if func['id'] in permission_ids.get(role['id'], []) %}checked{% end %}> {{ func['name'] }}</label>
+                                {% if func.get('children') %}
+                                    <div style="margin-left:2rem;">
+                                    {% for child in func['children'] %}
+                                        <label><input type="checkbox" name="function_ids" value="{{ child['id'] }}" {% if child['id'] in permission_ids.get(role['id'], []) %}checked{% end %}> {{ child['name'] }}</label>
+                                    {% end %}
+                                    </div>
+                                {% end %}
+                            {% end %}
+                        </div>
+                        {% if not role.get('is_system') %}
+                            <button type="submit">保存</button>
+                        {% else %}
+                            <span>系统角色不可编辑</span>
+                        {% end %}
+                    </form>
+                </details>
+                {% if not role.get('is_system') %}
+                    <form method="post" action="/admin/roles/status/{{ role['id'] }}" style="display:inline;">
+                        {% module xsrf_form_html() %}
+                        <input type="hidden" name="status" value="{{ 'disabled' if role['status']=='active' else 'active' }}">
+                        <button type="submit">{{ '禁用' if role['status']=='active' else '启用' }}</button>
+                    </form>
+                    <form method="post" action="/admin/roles/delete/{{ role['id'] }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
+                        {% module xsrf_form_html() %}
+                        <button type="submit" class="danger">删除</button>
+                    </form>
+                {% end %}
+            </td>
+        </tr>
+    {% end %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span>共 {{ total }} 条，第 {{ page }} 页</span>
+    {% if page > 1 %}<a href="?page={{ page-1 }}&keyword={{ keyword }}&status={{ status }}">上一页</a>{% end %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&keyword={{ keyword }}&status={{ status }}">下一页</a>{% end %}
+</div>
+{% end %}
